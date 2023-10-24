@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "Node.h"
+#include "V1.h"
 
 
 int init_node(node *n, int nb_dep, int exe_time) {
