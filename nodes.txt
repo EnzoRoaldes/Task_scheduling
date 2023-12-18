@@ -1,9 +1,8 @@
-Number of nodes :
-4
+5 7
 
-Number of dependancies + exe_time of each node : (followed by the nodes it depends of)
-2 3.000 // (node || exe_time)
-1 3 // max 100 per ligne
+2 3.0
+1
+3
 
 1 1.2
 2
@@ -11,4 +10,9 @@ Number of dependancies + exe_time of each node : (followed by the nodes it depen
 0 2.4
 
 2 0.1
-1 2
+1
+2
+
+2 4.0
+1
+3
