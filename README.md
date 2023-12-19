@@ -3,8 +3,7 @@
 ## Guideline
 
 For this project we are assuming that we are given a number of different tasks that have dependencies between each other (in the sense that some tasks need to be finished before others can be started).  
-The only guarantee that we have is that there are no circular dependencies (these
-would otherwise imply that not all tasks can be completed).
+The only guarantee that we have is that there are no circular dependencies (these would otherwise imply that not all tasks can be completed).
 
 In a first step you should formalize this problem in terms of a graph data structure with certain properties, and then describe and code an algorithm that will provide one among the possible sequential tasks scheduling.  
 Your guiding keyword is topological sorting of acyclic directed graph.
