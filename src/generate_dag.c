@@ -19,7 +19,7 @@ void generate_dag(int nodes, int max_dependencies, float max_execution_time) {
     int total_dependencies = 0;
 
     // Write the total number of nodes and dependencies on the first line
-    fprintf(file, "%d %d\n", nodes, total_dependencies);
+    fprintf(file, "%d %d            ", nodes, total_dependencies);
 
     for (int node = 0; node < nodes; ++node) {
         int num_dependencies = (node == 0) ? 0 
@@ -59,7 +59,6 @@ void generate_dag(int nodes, int max_dependencies, float max_execution_time) {
 
     // Move to the beginning of the file to update the total number of dependencies
     fseek(file, 0, SEEK_SET);
-    fprintf(file, "%d %d\n", nodes, total_dependencies);
-
+    fprintf(file, "%d %d", nodes, total_dependencies);
     fclose(file);
 }
