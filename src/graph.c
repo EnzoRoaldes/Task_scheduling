@@ -57,7 +57,7 @@ int read_file(char *file, graph *g, int details) {
             ( g->t_node[g->t_parent[cpt++]] ).nb_child += 1;
         }
     }
-    if (details)
+    if (details && g->nb_node <= 10)
         print_graph(g);
 
     fclose(f);
@@ -102,6 +102,7 @@ int *DFS(graph *g) {
         res[cpt++] = v.id;
     }
     priority_queue_fini(q);
+    free(q);
     return res;
 }
 

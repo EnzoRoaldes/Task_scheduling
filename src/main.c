@@ -70,6 +70,18 @@ int simu(int* res, graph *g, int *exe_order) {
 }
 
 
+int simu_seq(int* res, graph *g) {
+
+    double cpt = 0;
+
+    for (int i = 0; i < g->nb_node; ++i) {
+        cpt += (g->t_node[res[i]]).exe_time;
+    }
+
+    return cpt;
+}
+
+
 /* Checks thats the execution order is coherent with
  * regards to the dependencies between the tasks
  */
@@ -81,6 +93,7 @@ int check_parent_present(int *exe_order, int i, int parent) {
     }
     return 0; // Parent is not present
 }
+
 
 void check_validity(graph *g, int *exe_order) {
     char *color = VALID;
@@ -108,9 +121,10 @@ void check_validity(graph *g, int *exe_order) {
  * @param details True if the user wants to print details 
  * about the task file/ False otherwise
  */
-int *execute_task_scheduling(int *res, graph *g) {
+int *execute_task_scheduling(int *res, graph *g, int simulate) {
 
     int *exe_order = (int *)calloc(g->nb_node, sizeof(int));
+    
     if (exe_order == NULL) {
         free(res);
         fini_graph(g);
@@ -118,14 +132,23 @@ int *execute_task_scheduling(int *res, graph *g) {
         perror("main : calloc exe_order");
         return NULL;
     }
+    
+    if (simulate) {
+        double start = omp_get_wtime();
+        simu(res, g, exe_order);
+        double end   = omp_get_wtime();
 
-    double start = omp_get_wtime();
-    simu(res, g, exe_order);
-    double end   = omp_get_wtime();
+        printf("Parallel execution duration = %.1fs\n", (double)(end - start));
+    }
+    
+    double exe_time = simu_seq(res, g);
+    printf("Sequential execution duration = %.1fs\n", exe_time);
 
-    printf("Execution duration = %.1fs\n", (double)(end - start));
-
-    free(res);    
+    for (int i = 0; i < g->nb_node; ++i) {
+        exe_order[i] = res[i];
+    }
+    
+    free(res);
     return exe_order;
 }
 
@@ -141,106 +164,87 @@ void print_exe_order(int *exe_order, int nb_node) {
     printf("]\n");
 }
 
+
 int main(int argc, char **argv) {
 
     char answer[32];
+    char filename[64];
     int nb_task = 0;
-
-    if (argc > 1) {
-        printf("Do you want to simulate the execution [y/n] ? (get the time in sec) \n");
+    int test = 0;
+    int test_tasks[3] = {5,7,9};
+    int nb_files = 3;
+    int *exe_order;
+    int details = 0;
+    graph *g = malloc(sizeof(graph));
+    
+    if (argc == 1) {
+        printf("Test on provided examples [y/n] ?\nOtherwise create your own set of tasks\n");
         scanf("%s", answer);
 
-        int simu = 0;
-        if (answer[0] == 'y') simu = 1;
+        if (answer[0] == 'n') {
 
-        int *exe_order;
-        
-        graph *g = malloc(sizeof(graph));
+            int max_dependencies;
+            float max_execution_time;
 
-        read_file(argv[1], g, 0);
-        printf("\nTest on %d tasks :\n", g->nb_node);
-        
-        int *res = DFS(g);
-        if (simu) {
-            exe_order = execute_task_scheduling(res, g);
-            print_exe_order(exe_order, g->nb_node);
-            check_validity(g, exe_order);
-        }else {
-            print_exe_order(res, g->nb_node);
-            check_validity(g, res);
+            printf("Enter the number of tasks to schedule : ");
+            scanf("%d", &nb_task);
+
+            printf("Enter the maximum number of dependencies per task: ");
+            scanf("%d", &max_dependencies);
+
+            printf("Enter the maximum execution time in sec for a task: ");
+            scanf("%f", &max_execution_time);
+
+            generate_dag(nb_task, max_dependencies, max_execution_time);
+            sprintf(filename, "tasks/tasks_%d.txt", nb_task); 
+            nb_files = 1;
         }
-
-        fini_graph(g);
-        printf("\n");
-
-        free(exe_order);
-        free(g);
-        return 0;
+        else test = 1;
+    } else {
+        sprintf(filename, "%s", argv[1]);
+        nb_files = 1;
     }
 
-    printf("Test on a provided example [y/n] ?\nOtherwise create your own set of tasks\n");
+    
+    printf("Do you want to print more details about the content of the tasks ? [y/n]\n");
+    printf("These details will only be printed for files of less than 10 tasks.\n");
     scanf("%s", answer);
     
-    if (answer[0] == 'n') {
-
-        int max_dependencies;
-        float max_execution_time;
-
-        printf("Enter the number of tasks to schedule : ");
-        scanf("%d", &nb_task);
-
-        printf("Enter the maximum number of dependencies per task: ");
-        scanf("%d", &max_dependencies);
-
-        printf("Enter the maximum execution time in sec for a task: ");
-        scanf("%f", &max_execution_time);
-
-        generate_dag(nb_task, max_dependencies, max_execution_time);
-    }
+    if (answer[0] == 'y')
+        details = 1;
     
-    int *exe_order;
-    graph *g = malloc(sizeof(graph));
-    if (nb_task > 0) {
-        printf("\nTest on %d tasks :\n", nb_task);
-        char filename[32];
-        sprintf(filename, "tasks/tasks_%d.txt", nb_task);
+    
+    printf("Do you want to simulate the execution (get the time in sec) ? [y/n] \n");
+    scanf("%s", answer);
+
+    int simu = 0;
+    if (answer[0] == 'y') 
+        simu = 1;
+
+
+    for (int i = 0; i < nb_files; ++i) {
         
-        read_file(filename, g, 0);
+        if (argc > 1)  {
+            read_file(filename, g, details);
+            nb_task = g->nb_node;
+        } if (test) {
+            nb_task = test_tasks[i];
+            printf("\nTest on %d tasks : \n", nb_task);
+            sprintf(filename, "tasks/tasks_%d_test.txt", nb_task);
+            read_file(filename, g, details);
+        } else {
+            printf("\nTest on %d tasks : \n", nb_task);
+            sprintf(filename, "tasks/tasks_%d.txt", nb_task);
+            read_file(filename, g, details);
+        }
+
         int *res = DFS(g);
-        
-        exe_order = execute_task_scheduling(res, g);
-        print_exe_order(exe_order, nb_task);
+    
+        exe_order = execute_task_scheduling(res, g, simu);
+        print_exe_order(exe_order, g->nb_node);
         check_validity(g, exe_order);
         fini_graph(g);
         printf("\n######################################\n");
-    }
-    else { 
-        printf("Do you want to execute it for 5,9 and then 12 tasks [y/n] ?\n"
-               "Otherwise it will be executed with more details on 5 tasks.\n");
-        scanf("%s", answer);
-
-        int details = 0;
-        int sizes[3] = {5,9,12};
-        
-        if (answer[0] == 'n')
-            details = 1;
-
-        char filename[32];
-        for (int i = 0; i < ((details) ? 1 : 3); ++i) {
-            nb_task = sizes[i];
-            printf("\nTest on %d tasks : \n", nb_task);
-            sprintf(filename, "tasks/tasks_%d.txt", nb_task);
-            sscanf(filename, "tasks/tasks_%d.txt", &nb_task);
-
-            read_file(filename, g, details);
-            int *res = DFS(g);
-        
-            exe_order = execute_task_scheduling(res, g);
-            print_exe_order(exe_order, nb_task);
-            check_validity(g, exe_order);
-            fini_graph(g);
-            printf("\n######################################\n");
-        }
     }
     
     free(exe_order);

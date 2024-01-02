@@ -58,8 +58,8 @@ static void sift_down(priority_queue *q, int pos) {
     while ( ( l_son < q->size && q->heap[pos].val < q->heap[l_son].val ) ||
             ( r_son < q->size && q->heap[pos].val < q->heap[r_son].val ) ) {
         
-        if ( ( r_son < q->size && q->heap[pos].val < q->heap[r_son].val ) &&
-           ( q->heap[r_son].val > q->heap[l_son].val ) ) {
+        if ( ( r_son < q->size) &&
+             ( q->heap[r_son].val > q->heap[l_son].val ) ) {
 
             swap(q, pos, r_son);
             pos = r_son;
@@ -81,13 +81,12 @@ void priority_queue_fini(priority_queue *q) {
     /* free all the queue q 
      */
 
-    /* free datas */
+    /* free data */
     while (q->size != 0) {
         priority_queue_pop(q);
     }
     free(q->heap);
     free(q->pos_in_heap);
-    free(q);
 }
 
 
